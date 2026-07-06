@@ -1,0 +1,1047 @@
+{
+  "name": "Restaurant Messenger ChatBot",
+  "nodes": [
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "path": "8f77ff31-88eb-49f5-8bcf-341c4e56feb6",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1728,
+        -32
+      ],
+      "id": "f13a9e9b-bcc1-4d98-b40c-c1c545c7386e",
+      "name": "Webhook",
+      "webhookId": "8f77ff31-88eb-49f5-8bcf-341c4e56feb6"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -1504,
+        -144
+      ],
+      "id": "b9a6acf4-7253-4b0a-a621-84c8df261c79",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1kKnCbQ7_CM4MgivIkAQyk8PWUKcwA3nIXCznRrFspHE",
+          "mode": "list",
+          "cachedResultName": "Restaurant Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1kKnCbQ7_CM4MgivIkAQyk8PWUKcwA3nIXCznRrFspHE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "items",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1kKnCbQ7_CM4MgivIkAQyk8PWUKcwA3nIXCznRrFspHE/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        -352,
+        304
+      ],
+      "id": "668e386a-fc83-47ef-8fb2-b10b847e90ca",
+      "name": "items",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7do9YblieP2zHg75",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v25.0/me/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer EAANsO76ZAwdwBR7njTeSjZAHisUaeHuTEphxR5SiSkB1boInSMhJz7ij7cAvSbsETkAHZBrZAPPYe1KWu5ZBwCHCet2A6hurINI35zjxexfuT4bnysbAz3Thbf4AUO4EF6E99RE3cTZCdRZBb8kbDU2hxOVQPlsxLM5YFdTnvKIZAZCleqRMiCCs221ajkL57iqDEPh777vcZA9AZDZD"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "recipient",
+              "value": "={{ {\n  id: $('Webhook').item.json.body.entry[0].messaging[0].sender.id\n} }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ {\n  text: $json.reply\n} }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        528,
+        160
+      ],
+      "id": "0dfde636-555f-4d81-9f01-af4a931b3843",
+      "name": "Respond"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.data }}",
+        "options": {
+          "systemMessage": "# ROLE\n\nأنت مساعد ذكي لمطعم.\n\nمهمتك هي فهم رسالة العميل وإرجاع JSON فقط بدون أي شرح أو أي نص إضافي.\n\n=================================================\nالمصدر الوحيد للبيانات\n=================================================\n\nيوجد Tool باسم \"items\" متصل بـ Google Sheets.\n\nقبل الإجابة عن أي سؤال عن:\n\n- المنيو\n- الأسعار\n- المنتجات\n- الإضافات\n- الكميات\n- توفر منتج\n\nيجب استخدام Tool \"items\".\n\nلا تعتمد على أي معلومات محفوظة لديك.\n\n=================================================\nأنواع الرسائل\n=================================================\n\nحدد نوع الرسالة في حقل type.\n\nالقيم المسموح بها فقط:\n\norder\ninquiry\nother\n\n=================================================\nإذا كانت الرسالة طلب أوردر\n=================================================\n\nاستخرج جميع البيانات الموجودة.\n\nإذا لم يذكر العميل بعض البيانات اتركها فارغة.\n\nيجب أن يكون الرد بهذا الشكل:\n\n{\n  \"type\":\"order\",\n  \"complete\":true,\n  \"customer\":{\n      \"name\":\"\",\n      \"phone\":\"\",\n      \"address\":\"\"\n  },\n  \"items\":[\n      {\n        \"name\":\"\",\n        \"quantity\":1,\n        \"unit\":\"piece\",\n        \"price\":0,\n        \"total\":0\n      }\n  ],\n  \"subtotal\":0,\n  \"delivery\":0,\n  \"total\":0,\n  \"missing_fields\":[],\n  \"reply\":\"\"\n}\n\n=================================================\nإذا كانت البيانات ناقصة\n=================================================\n\nاجعل\n\ncomplete=false\n\nوضع البيانات الناقصة داخل\n\nmissing_fields\n\nمثال\n\n[\n\"name\",\n\"phone\",\n\"address\"\n]\n\nويكون reply سؤال مهذب يطلب البيانات الناقصة.\n\n=================================================\nالكميات\n=================================================\n\nافهم جميع طرق كتابة الكميات مثل:\n\n2\n\n٢\n\nواحد\n\nاتنين\n\nثلاثة\n\nربع\n\nنص\n\nثلث\n\nكيلو\n\nكيلو ونص\n\nكيلو وربع\n\nكيلوين\n\n3 كيلو\n\nنصف كيلو\n\nربع كيلو\n\n٥٠٠ جرام\n\n250 جرام\n\n1.5 كيلو\n\n2.5 كيلو\n\nقطعة\n\nسندوتش\n\nعلبة\n\nوجبة\n\nأي كمية يذكرها العميل يجب تحويلها إلى:\n\nquantity\n\nو\n\nunit\n\n=================================================\nقبل إضافة أي منتج\n=================================================\n\nيجب استخدام Tool \"items\".\n\nإذا لم يكن المنتج موجوداً في Google Sheet فلا تقم بإضافته.\n\nبدلاً من ذلك اسأل العميل إذا كان يقصد منتجاً آخر.\n\n=================================================\nالأسعار\n=================================================\n\nلا تخمن أي سعر.\n\nالسعر يؤخذ فقط من Tool.\n\n=================================================\nالإجمالي\n=================================================\n\ntotal = quantity × price\n\nsubtotal = مجموع المنتجات\n\n=================================================\nإذا كانت الرسالة استفسار\n=================================================\n\nإذا كان العميل يسأل عن:\n\nالسعر\n\nالمنيو\n\nالمكونات\n\nالإضافات\n\nالعروض\n\nمواعيد العمل\n\nالتوصيل\n\nأي معلومة\n\nاجعل الرد:\n\n{\n\"type\":\"inquiry\",\n\"reply\":\"الإجابة\",\n\"complete\":false\n}\n\nواستخدم Tool إذا كان السؤال متعلقاً بالمنيو أو الأسعار.\n\n=================================================\nإذا كانت الرسالة ليست طلباً ولا استفساراً\n=================================================\n\nمثل:\n\nالسلام عليكم\n\nأهلاً\n\nشكراً\n\nتمام\n\nاجعل الرد:\n\n{\n\"type\":\"other\",\n\"reply\":\"الرد المناسب\"\n}\n\n=================================================\nقواعد مهمة جداً\n=================================================\n\n- لا تخمن المنتجات.\n- لا تخمن الأسعار.\n- لا تضيف منتجات غير موجودة في Tool.\n- استخدم Tool دائماً قبل أي إجابة عن المنتجات أو الأسعار.\n- الرد يجب أن يكون JSON فقط.\n- ممنوع كتابة Markdown.\n- ممنوع كتابة ```json.\n- ممنوع أي كلام خارج JSON.\n- إذا طلب العميل أكثر من منتج ضعهم جميعاً داخل items.\n- إذا طلب العميل نفس المنتج بكميات مختلفة اجمعها في عنصر واحد.\n- إذا لم يتم العثور على المنتج، أخبر العميل بذلك في reply ولا تضفه إلى items."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -544,
+        80
+      ],
+      "id": "0e8d75e9-bbbd-448f-8525-c55248c65799",
+      "name": "Restaurant Bot"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ef5b7d75-280e-4006-8b3c-85925861a73c",
+              "name": "data",
+              "value": "={{ $json.body.entry[0].messaging[0].message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -832,
+        -128
+      ],
+      "id": "a00b0913-fce3-41d4-8d7a-2503a35d642f",
+      "name": "text"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ef5b7d75-280e-4006-8b3c-85925861a73c",
+              "name": "data",
+              "value": "={{ $json.body.entry[0].messaging[0].message.attachments[0].payload.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -832,
+        64
+      ],
+      "id": "8c4a506e-56a7-462c-b7f7-bbecc44ebff7",
+      "name": "image"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ef5b7d75-280e-4006-8b3c-85925861a73c",
+              "name": "data",
+              "value": "={{ $json.body.entry[0].messaging[0].message.attachments[0].payload.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -832,
+        256
+      ],
+      "id": "c5d253ad-d352-4432-82d3-202974134e9c",
+      "name": "voice"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.entry[0].messaging[0].message.attachments[0].payload.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1280,
+        64
+      ],
+      "id": "1a51f0f3-54bd-461f-969e-f7a528cf5695",
+      "name": "download image"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.entry[0].messaging[0].message.attachments[0].payload.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1280,
+        256
+      ],
+      "id": "960d9d24-38a3-4aa2-912e-0881f6fdb3f8",
+      "name": "download voice"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1e7165d4-d48d-4640-8650-c1d11e678fd4",
+                    "leftValue": "={{ $json.body.entry[0].messaging[0].message.text }}",
+                    "rightValue": "text",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c057aebe-3e15-46a3-9835-7e3c559fc12d",
+                    "leftValue": "={{ $json.body.entry[0].messaging[0].message.attachments[0].type }}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "image"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.entry[0].messaging[0].message.attachments[0].type }}",
+                    "rightValue": "audio",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "9aca3e0e-c94f-4bb6-a5ed-c089b7067f68"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "audio"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1504,
+        48
+      ],
+      "id": "5a858af5-5e1f-4462-9911-f702ec195271",
+      "name": "messege classification "
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook').item.json.body.entry[0].messaging[0].sender.id }}",
+        "tableName": "Resturant "
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        -480,
+        304
+      ],
+      "id": "778eee1e-204a-4762-b20d-114432cb733c",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "i8U96LZYXbyyyv3E",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-pro",
+          "mode": "list",
+          "cachedResultName": "GPT-5-PRO"
+        },
+        "inputType": "base64",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -1056,
+        64
+      ],
+      "id": "bde1050b-238d-4a9d-a731-03fae5d471af",
+      "name": "Analyze image",
+      "credentials": {
+        "openAiApi": {
+          "id": "bxDfpgBLbEUeDLVK",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -1056,
+        256
+      ],
+      "id": "3ad8f861-426c-4e5b-8f93-2ce35b07ea11",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "openAiApi": {
+          "id": "bxDfpgBLbEUeDLVK",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "gpt-3.5-turbo"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -608,
+        304
+      ],
+      "id": "8ba9aed8-9e58-4fbe-be07-2c42b84e31ce",
+      "name": "Brain",
+      "credentials": {
+        "openAiApi": {
+          "id": "bxDfpgBLbEUeDLVK",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = JSON.parse($json.output);\n\nreturn [\n  {\n    json: data\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        80
+      ],
+      "id": "5607865e-41b0-4c94-94f7-4b3dfc753148",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "order",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "e49f31d7-da30-489f-b2a7-fef7f3da4d75"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "order"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "25fb7073-6d83-40e4-be74-267bff7c1d24",
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "inquiry",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "inquiry"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d788c632-6986-46f4-ac1d-8f917b258aff",
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "other",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "other"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        80,
+        64
+      ],
+      "id": "096a9e38-228f-4120-a295-de61a0d0fdf9",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5756119d-f71e-4eeb-8d2c-21a2930337ea",
+              "leftValue": "={{ $json.complete }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        304,
+        -32
+      ],
+      "id": "f3029f4b-1d70-403a-821b-f3a442ced812",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1kKnCbQ7_CM4MgivIkAQyk8PWUKcwA3nIXCznRrFspHE",
+          "mode": "list",
+          "cachedResultName": "Restaurant Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1kKnCbQ7_CM4MgivIkAQyk8PWUKcwA3nIXCznRrFspHE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1052419582,
+          "mode": "list",
+          "cachedResultName": "order data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1kKnCbQ7_CM4MgivIkAQyk8PWUKcwA3nIXCznRrFspHE/edit#gid=1052419582"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "product name": "={{ $json.items[0].name }}",
+            "product total": "={{ $json.items[0].total }}",
+            "product que": "={{ $json.items[0].quantity }}",
+            "id": "={{ $('Webhook').item.json.body.entry[0].messaging[0].sender.id }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product name",
+              "displayName": "product name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product que",
+              "displayName": "product que",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "product total",
+              "displayName": "product total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        528,
+        -224
+      ],
+      "id": "326dea37-2487-49ff-ad6d-b0ade77e51b4",
+      "name": "product",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7do9YblieP2zHg75",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1kKnCbQ7_CM4MgivIkAQyk8PWUKcwA3nIXCznRrFspHE",
+          "mode": "list",
+          "cachedResultName": "Restaurant Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1kKnCbQ7_CM4MgivIkAQyk8PWUKcwA3nIXCznRrFspHE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1334100346,
+          "mode": "list",
+          "cachedResultName": "client data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1kKnCbQ7_CM4MgivIkAQyk8PWUKcwA3nIXCznRrFspHE/edit#gid=1334100346"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Webhook').item.json.body.entry[0].messaging[0].sender.id }}",
+            "name": "={{ $json.customer.name }}",
+            "addres": "={{ $json.customer.address }}",
+            "phone": "={{ $json.customer.phone }}",
+            "total": "={{ $json.items[0].total }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "addres",
+              "displayName": "addres",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "total",
+              "displayName": "total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        528,
+        -32
+      ],
+      "id": "c234ad52-b107-4250-be25-6507d5c0ac66",
+      "name": "client",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "7do9YblieP2zHg75",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        752,
+        -128
+      ],
+      "id": "f1c3c38d-2781-4949-a6ab-70655d8e5a67",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v25.0/me/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer EAANsO76ZAwdwBR7njTeSjZAHisUaeHuTEphxR5SiSkB1boInSMhJz7ij7cAvSbsETkAHZBrZAPPYe1KWu5ZBwCHCet2A6hurINI35zjxexfuT4bnysbAz3Thbf4AUO4EF6E99RE3cTZCdRZBb8kbDU2hxOVQPlsxLM5YFdTnvKIZAZCleqRMiCCs221ajkL57iqDEPh777vcZA9AZDZD"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "recipient",
+              "value": "={{ {\n  id: $('Webhook').item.json.body.entry[0].messaging[0].sender.id\n} }}"
+            },
+            {
+              "name": "message",
+              "value": "={{ {\n  text: $json.reply\n} }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        976,
+        -128
+      ],
+      "id": "cc4b5041-6286-4fe4-97f5-eb52f8accdc0",
+      "name": "Respond1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "messege classification ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "items": {
+      "ai_tool": [
+        [
+          {
+            "node": "Restaurant Bot",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restaurant Bot": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "text": {
+      "main": [
+        [
+          {
+            "node": "Restaurant Bot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "image": {
+      "main": [
+        [
+          {
+            "node": "Restaurant Bot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "voice": {
+      "main": [
+        [
+          {
+            "node": "Restaurant Bot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "download image": {
+      "main": [
+        [
+          {
+            "node": "Analyze image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "download voice": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "messege classification ": {
+      "main": [
+        [
+          {
+            "node": "text",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "download image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "download voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Restaurant Bot",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image": {
+      "main": [
+        [
+          {
+            "node": "image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Brain": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Restaurant Bot",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "client",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "product",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "client": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "product": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Respond1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "8f09b630-9ee2-4d6e-b099-05cdc3e47e65",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "990471da367dc7f06b12082f26d36e145d29d47436cab3fd70b5149b1f5513d8"
+  },
+  "nodeGroups": [],
+  "id": "UrGyjIlLIoAMrTQ6",
+  "tags": []
+}
